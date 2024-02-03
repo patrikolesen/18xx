@@ -77,7 +77,8 @@ module View
           @cities = @tile.cities.size
           stops = @tile.stops
           @hide = stops.any?(&:hide)
-
+          @rows = 1
+          @rows = @tile.offboards.first.rows.to_i if @tile.offboards.first&.rows
           @revenue = @tile.revenue_to_render.first
         end
 
@@ -93,7 +94,7 @@ module View
           transform = "#{rotation_for_layout} #{translate}"
 
           if multi_revenue?
-            h(MultiRevenue, revenues: @revenue, transform: transform)
+            h(MultiRevenue, revenues: @revenue, transform: transform, rows: @rows)
           else
             h(SingleRevenue, revenue: @revenue, transform: transform)
           end
