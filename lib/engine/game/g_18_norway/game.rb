@@ -89,7 +89,7 @@ module Engine
 
         def event_custom_end_game!
           @log << '-- Event: End game --'
-          @custom_end_game = true
+          @custom_end_game = true unless id == 11
         end
 
         def hovedbanen
@@ -318,30 +318,30 @@ module Engine
         end
 
         def next_round!
-          if self.id == 13 || self.id == 11
+          if id == 13 || id == 11
             @round =
-            case @round
-            when G18Norway::Round::Nationalization
-              new_stock_round
-            when Engine::Round::Stock
-              @operating_rounds = @phase.operating_rounds
-              reorder_players
-              new_operating_round
-            when Engine::Round::Operating
-              if @round.round_num < @operating_rounds
-                or_round_finished
-                new_operating_round(@round.round_num + 1)
-              else
-                @turn += 1
-                or_round_finished
-                or_set_finished
-                new_nationalization_round(1)
+              case @round
+              when G18Norway::Round::Nationalization
+                new_stock_round
+              when Engine::Round::Stock
+                @operating_rounds = @phase.operating_rounds
+                reorder_players
+                new_operating_round
+              when Engine::Round::Operating
+                if @round.round_num < @operating_rounds
+                  or_round_finished
+                  new_operating_round(@round.round_num + 1)
+                else
+                  @turn += 1
+                  or_round_finished
+                  or_set_finished
+                  new_nationalization_round(1)
+                end
+              when init_round.class
+                init_round_finished
+                reorder_players
+                new_stock_round
               end
-            when init_round.class
-              init_round_finished
-              reorder_players
-              new_stock_round
-            end
             return @round
           end
           @round =
@@ -637,6 +637,7 @@ module Engine
         end
 
         def check_sale_timing(entity, bundle)
+          return super if id == 13 || id == 11
           return false if @turn <= 1 && !@round.operating?
 
           super(entity, bundle)
