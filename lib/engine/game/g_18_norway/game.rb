@@ -49,7 +49,7 @@ module Engine
 
         BANK_CASH = 999_000
 
-        GAME_END_CHECK = { bankrupt: :immediate, custom: :one_more_full_or_set }.freeze
+        GAME_END_CHECK = { bankrupt: :immediate, custom: :one_more_full_or_set, final_phase: :one_more_full_or_set }.freeze
 
         CERT_LIMIT = {
           3 => { 0 => 12, 1 => 12, 2 => 12, 3 => 15, 4 => 15, 5 => 17, 6 => 17, 7 => 19, 8 => 19 },
