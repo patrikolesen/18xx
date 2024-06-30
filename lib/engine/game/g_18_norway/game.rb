@@ -215,6 +215,8 @@ module Engine
           hex_by_id('H26').neighbors[5] = hex_by_id('I27')
           hex_by_id('G27').neighbors[4] = hex_by_id('H26')
           hex_by_id('I27').neighbors[2] = hex_by_id('H26')
+
+          @skip_next_nationalization = false
         end
 
         def p4
@@ -324,8 +326,27 @@ module Engine
 
         def new_nationalization_round(round_num)
           G18Norway::Round::Nationalization.new(self, [
-              G18Norway::Step::NationalizeCorporation,
-              ], round_num: round_num)
+            G18Norway::Step::NationalizeCorporation,
+          ], round_num: round_num)
+        end
+
+        def new_nationalization_skip_queue_round(round_num)
+          G18Norway::Round::NationalizationSkipQueue.new(self, [
+            G18Norway::Step::NationalizeSkipQueue,
+          ], round_num: round_num)
+        end
+
+        def skip_next_nationalization!
+          @skip_next_nationalization = true
+        end
+
+        def next_or!
+          if @round.round_num < @operating_rounds
+            new_operating_round(@round.round_num + 1)
+          else
+            or_set_finished
+            new_stock_round
+          end
         end
 
         def next_round!
@@ -357,13 +378,15 @@ module Engine
           end
           @round =
             case @round
-            when G18Norway::Round::Nationalization
-              if @round.round_num < @operating_rounds
-                new_operating_round(@round.round_num + 1)
+            when G18Norway::Round::NationalizationSkipQueue
+              if @skip_next_nationalization
+                @skip_next_nationalization = false
+                next_or!
               else
-                or_set_finished
-                new_stock_round
+                new_nationalization_round(@round.round_num)
               end
+            when G18Norway::Round::Nationalization
+              next_or!
             when Engine::Round::Stock
               @operating_rounds = @phase.operating_rounds
               reorder_players
@@ -371,12 +394,12 @@ module Engine
             when Engine::Round::Operating
               if @round.round_num < @operating_rounds
                 or_round_finished
-                new_nationalization_round(@round.round_num)
+                new_nationalization_skip_queue_round(@round.round_num)
               else
                 @turn += 1
                 or_round_finished
                 if @phase.tiles.include?(:green)
-                  new_nationalization_round(@round.round_num)
+                  new_nationalization_skip_queue_round(@round.round_num)
                 else
                   or_set_finished
                   new_stock_round
